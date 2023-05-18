@@ -1,31 +1,42 @@
-import {JwtHeaderError} from './JwtHeaderError';
+const AUTH_TYPES = ['BEARER', 'BASIC', 'DIGEST', 'HOBA', 'MUTUAL', 'NEGOTIATE', 'NTLM', 'VAPID', 'AWS4-HMAC-SHA256'] as const;
+export type AuthType = typeof AUTH_TYPES[number];
 
-const authTypes = ['BEARER', 'BASIC', 'DIGEST', 'HOBA', 'MUTUAL', 'NEGOTIATE', 'NTLM', 'VAPID', 'AWS4-HMAC-SHA256'] as const;
-export type AuthType = typeof authTypes[number];
+const AuthHeaderMustBeString = 'Auth header must be a string';
+
+export class AuthHeaderError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'AuthHeaderError';
+		Error.captureStackTrace(this, this.constructor);
+	}
+}
 
 /**
- * AuthType type verify
+ * Type guard for AuthType
  */
 export function isAuthType(data: unknown): data is AuthType {
 	if (typeof data !== 'string') {
 		return false;
 	}
 	data = data.toUpperCase();
-	return authTypes.some((t) => t === data);
+	return AUTH_TYPES.some((t) => t === data);
 }
 
 /**
- * builds uppercase AuthType if valid
+ * Returns the authentication type from the authorization string
+ * @param {unknown} value Authorization string
+ * @throws AuthHeaderError - If the authentication type is not valid
+ * @returns AuthType - Authentication type
  */
-export function getAuthType(data: unknown): AuthType {
-	if (typeof data !== 'string') {
-		throw new Error(`${data} is not valid auth header type`);
+export function getAuthType(value: unknown): AuthType {
+	if (typeof value !== 'string') {
+		throw new AuthHeaderError(`${JSON.stringify(value)} is not string type`);
 	}
-	data = data.toUpperCase();
-	if (!isAuthType(data)) {
-		throw new Error(`${data} is not valid auth header type`);
+	value = value.toUpperCase();
+	if (!isAuthType(value)) {
+		throw new AuthHeaderError(`${value} is not valid auth header type`);
 	}
-	return data;
+	return value;
 }
 
 /**
@@ -33,9 +44,16 @@ export function getAuthType(data: unknown): AuthType {
  */
 export function getTokenOrAuthHeader(data: unknown): string | AuthHeader {
 	if (typeof data !== 'string') {
-		throw new JwtHeaderError('token header: token is not a string');
+		throw new AuthHeaderError(AuthHeaderMustBeString);
 	}
 	return AuthHeader.isAuthHeader(data) ? AuthHeader.fromString(data) : data;
+}
+
+export function getAuthHeader(data: unknown): AuthHeader {
+	if (typeof data !== 'string') {
+		throw new AuthHeaderError(AuthHeaderMustBeString);
+	}
+	return AuthHeader.fromString(data);
 }
 
 export class AuthHeader {
@@ -44,20 +62,22 @@ export class AuthHeader {
 	public readonly credentials: string;
 
 	public static isAuthHeader(auth: unknown): auth is string {
-		if (!auth || typeof auth !== 'string') {
+		if (typeof auth !== 'string') {
 			return false;
 		}
 		const [type] = auth.split(' ', 2);
 		return isAuthType(type);
 	}
+
 	public static fromString(auth: string): AuthHeader {
+		if (typeof auth !== 'string') {
+			throw new AuthHeaderError(AuthHeaderMustBeString);
+		}
 		return new AuthHeader(auth);
 	}
+
 	private constructor(auth: string) {
 		const [type, credentials] = auth.split(' ', 2);
-		if (!isAuthType(type)) {
-			throw new Error(`${type} is not valid auth header type`);
-		}
 		this.auth = auth;
 		this.type = getAuthType(type);
 		this.credentials = credentials;

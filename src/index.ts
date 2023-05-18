@@ -1,10 +1,12 @@
 import * as jwt from 'jsonwebtoken';
 import {AuthHeader, getTokenOrAuthHeader} from './AuthHeader';
-import {ExpireCache} from './ExpireCache';
+import {ExpireCache} from '@avanio/expire-cache';
 import {FullDecodedIssuerTokenStructure, FullDecodedTokenStructure, isIssuerToken, isTokenFullDecoded, TokenPayload} from './interfaces/token';
 import {JwtCertManager} from './JwtCertManager';
 import {JwtCertStore} from './JwtCertStore';
-import {JwtHeaderError} from './JwtHeaderError';
+import {JwtHeaderError} from './lib/JwtHeaderError';
+import {jwtVerifyPromise} from './lib/jwt';
+import {JwtResponse} from './interfaces/JwtResponse';
 
 const cache = new ExpireCache<TokenPayload>();
 
@@ -37,29 +39,11 @@ function getKeyIdAndSetOptions(decoded: FullDecodedTokenStructure, options: jwt.
 }
 
 /**
- * Response have decoded body and information if was already verified and returned from cache
- */
-export type JwtResponse<T extends object> = {body: T & TokenPayload; isCached: boolean};
-
-type JwtVerifyPromiseFunc<T = Record<string, any>> = (...params: Parameters<typeof jwt.verify>) => Promise<TokenPayload<T> | undefined>;
-export const jwtVerifyPromise: JwtVerifyPromiseFunc = (token, secretOrPublicKey, options?) => {
-	return new Promise<TokenPayload | undefined>((resolve, reject) => {
-		jwt.verify(token, secretOrPublicKey, options, (err: jwt.VerifyErrors | null, decoded: object | undefined) => {
-			if (err) {
-				reject(err);
-			} else {
-				resolve(decoded);
-			}
-		});
-	});
-};
-
-/**
  * Verify JWT token against issuer public certs
  * @param tokenOrBearer jwt token or Bearer string with jwt token
  * @param options jwt verify options
  */
-export const jwtVerify = async <T extends object>(tokenOrBearer: string, options: jwt.VerifyOptions = {}): Promise<JwtResponse<T>> => {
+export const jwtVerify = async <T extends Record<string, unknown>>(tokenOrBearer: string, options: jwt.VerifyOptions = {}): Promise<JwtResponse<T>> => {
 	const currentToken = getTokenOrAuthHeader(tokenOrBearer);
 	// only allow bearer as auth type
 	if (currentToken instanceof AuthHeader && currentToken.type !== 'BEARER') {
@@ -74,7 +58,7 @@ export const jwtVerify = async <T extends object>(tokenOrBearer: string, options
 	const secretOrPublicKey = await currentCertManager.getCert(decoded.payload.iss, getKeyIdAndSetOptions(decoded, options));
 	const verifiedDecode = (await jwtVerifyPromise(token, secretOrPublicKey, options)) as T & TokenPayload;
 	if (verifiedDecode.exp) {
-		cache.set(token, verifiedDecode, verifiedDecode.exp * 1000);
+		cache.set(token, verifiedDecode, new Date(verifiedDecode.exp * 1000));
 	}
 	return {body: verifiedDecode, isCached: false};
 };
@@ -84,7 +68,7 @@ export const jwtVerify = async <T extends object>(tokenOrBearer: string, options
  * @param authHeader raw authentication header with ^Bearer prefix
  * @param options jwt verify options
  */
-export const jwtBearerVerify = <T extends object>(authHeader: string, options: jwt.VerifyOptions = {}): Promise<JwtResponse<T>> => {
+export const jwtBearerVerify = <T extends Record<string, unknown>>(authHeader: string, options: jwt.VerifyOptions = {}): Promise<JwtResponse<T>> => {
 	const match = authHeader.match(/^Bearer (.*?)$/);
 	if (!match) {
 		throw new Error('No authentication header');

@@ -11,9 +11,10 @@ import * as chaiAsPromised from 'chai-as-promised';
 import 'cross-fetch/polyfill';
 import * as jwt from 'jsonwebtoken';
 import 'mocha';
-import {jwtBearerVerify, jwtVerify, jwtVerifyPromise, jwtHaveIssuer, testGetCache, jwtDeleteKid} from '../src';
-import {buildCertFrame} from '../src/rsaPublicKeyPem';
-import {JwtHeaderError} from '../src/JwtHeaderError';
+import {jwtBearerVerify, jwtVerify, jwtHaveIssuer, testGetCache, jwtDeleteKid} from '../src';
+import {jwtVerifyPromise} from '../src/lib/jwt';
+import {buildCertFrame} from '../src/lib/rsaPublicKeyPem';
+import {JwtHeaderError} from '../src/lib/JwtHeaderError';
 import {JwtCertManager} from '../src/JwtCertManager';
 import {JwtCertStore} from '../src/JwtCertStore';
 import {getGoogleIdToken} from './lib/google';
@@ -62,7 +63,7 @@ describe('jwtUtil', () => {
 	describe('cache', () => {
 		it('Test expire cache', () => {
 			const cache = testGetCache();
-			cache.set('test', {none: 'test'}, 0);
+			cache.set('test', {none: 'test'}, new Date(Date.now() - 1000));
 			expect(cache.size()).to.be.eq(1);
 			expect(cache.get('test')).to.be.eq(undefined); // shoud remove test as it's expired
 			expect(cache.size()).to.be.eq(0);

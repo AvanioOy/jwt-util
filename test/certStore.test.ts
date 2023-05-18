@@ -12,6 +12,11 @@ const LOCAL_ISSUER = 'https://localhost:3000';
 const CACHE_FILE = './test/cache.json';
 
 describe('JwtCertStore', () => {
+	before(() => {
+		if (fs.existsSync(CACHE_FILE)) {
+			fs.unlinkSync(CACHE_FILE);
+		}
+	});
 	it('should store and load symmetric key', async () => {
 		const certStore = new JwtCertStore();
 		await certStore.init();

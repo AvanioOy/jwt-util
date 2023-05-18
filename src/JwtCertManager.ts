@@ -1,10 +1,10 @@
 import * as path from 'path';
 import 'cross-fetch/polyfill';
 import {IJwtCertStore} from './interfaces/IJwtCertStore';
-import {ILoggerLike} from './interfaces/ILoggerLike';
+import {ILoggerLike} from '@avanio/logger-like';
 import {IJwtKeys} from './interfaces/JwtKeys';
 import {IOpenIdConfigCache} from './interfaces/OpenIdConfig';
-import {buildCertFrame, rsaPublicKeyPem} from './rsaPublicKeyPem';
+import {buildCertFrame, rsaPublicKeyPem} from './lib/rsaPublicKeyPem';
 
 interface Props {
 	logger?: ILoggerLike;
@@ -28,19 +28,32 @@ export class JwtCertManager {
 	 * this wraps the JwtCertStore.getCert method and adds the logic to fetch the certs from the issuer if they are not in the store
 	 */
 	public async getCert(issuerUrl: string, kid: string): Promise<Buffer | string> {
+		this.props.logger?.debug(`JwtCertManager getCert ${issuerUrl} ${kid}`);
 		await this.manager.init();
 		let cert = await this.manager.getCert(issuerUrl, kid);
+		this.props.logger?.debug(`JwtCertManager getCert ${issuerUrl} ${kid} ${cert}`);
 		// not found, try to load issuer certs
 		if (!cert) {
 			await this.loadIssuerCerts(issuerUrl);
-		}
-		cert = await this.manager.getCert(issuerUrl, kid);
-		// not found, throw error
-		if (!cert) {
-			// after issuer certs update, we still don't have cert for kid, throw out
-			throw new Error(`no key Id '${kid}' found for issuer '${issuerUrl}'`);
+			cert = await this.manager.getCert(issuerUrl, kid);
+			// not found, throw error
+			if (!cert) {
+				// after issuer certs update, we still don't have cert for kid, throw out
+				throw new Error(`no key Id '${kid}' found for issuer '${issuerUrl}'`);
+			}
 		}
 		return cert;
+	}
+
+	public async addCert(issuerUrl: string, keyId: string, type: 'asymmetric', cert: Buffer): Promise<void>;
+	public async addCert(issuerUrl: string, keyId: string, type: 'symmetric', cert: string): Promise<void>;
+	public async addCert(issuerUrl: string, keyId: string, type: 'symmetric' | 'asymmetric', cert: Buffer | string): Promise<void> {
+		await this.manager.init();
+		if (Buffer.isBuffer(cert)) {
+			await this.manager.addCert(issuerUrl, keyId, 'asymmetric', cert);
+		} else {
+			await this.manager.addCert(issuerUrl, keyId, 'symmetric', cert);
+		}
 	}
 
 	public async deleteCert(issuerUrl: string, kid: string): Promise<boolean> {

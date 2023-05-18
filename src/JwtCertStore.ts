@@ -1,59 +1,58 @@
 import * as fs from 'fs';
-import {IJwtCertStore} from './interfaces/IJwtCertStore';
+import {ILoggerLike} from '@avanio/logger-like';
+import {CertAsymmetricIssuer, CertAsymmetricIssuerFile, CertSymmetricIssuer, IJwtCertStore} from './interfaces/IJwtCertStore';
 
-export type CertSymmetricIssuer = {
-	_ts: number;
-	type: 'symmetric';
-	keys: Record<string, string | undefined>;
-};
-
-export type CertAsymmetricIssuer = {
-	_ts: number;
-	type: 'asymmetric';
-	keys: Record<string, Buffer | undefined>;
-};
-
-export type CertAsymmetricIssuerFile = {
-	_ts: number;
-	type: 'asymmetric';
-	keys: Record<string, string | undefined>;
-};
+type CertStoreVersion = 1;
 
 export type CertStore = {
 	_ts: number;
+	version: CertStoreVersion;
 	issuers: Record<string, CertSymmetricIssuer | CertAsymmetricIssuer>;
 };
 
 export type CertStoreFile = {
 	_ts: number;
+	version: CertStoreVersion;
 	issuers: Record<string, CertSymmetricIssuer | CertAsymmetricIssuerFile>;
 };
+
+export function isCertStoreFile(store: unknown): store is CertStore {
+	return typeof store === 'object' && store !== null && '_ts' in store && 'version' in store && 'issuers' in store && (store as CertStore).version === 1;
+}
 
 type Props = {
 	cacheFileName?: string;
 	cachePretty?: boolean;
+	logger?: ILoggerLike;
 };
 
 export class JwtCertStore implements IJwtCertStore {
 	private store: CertStore;
-	private props: Props | undefined;
+	private props: Props;
 
 	constructor(props?: Props) {
-		this.props = props;
+		this.props = props || {};
 	}
 
 	public async init() {
 		if (!this.store) {
+			this.props.logger?.debug('JwtCertStore init');
+			this.store = {_ts: 0, version: 1, issuers: {}};
 			if (this.props?.cacheFileName && fs.existsSync(this.props?.cacheFileName)) {
-				this.store = JSON.parse((await fs.promises.readFile(this.props?.cacheFileName)).toString());
-				this.restoreStore();
-			} else {
-				this.store = {_ts: 0, issuers: {}};
+				const data = JSON.parse((await fs.promises.readFile(this.props?.cacheFileName)).toString());
+				if (isCertStoreFile(data)) {
+					this.props.logger?.debug('JwtCertStore init - restore from cache file');
+					this.store = data;
+					this.restoreStore();
+				}
 			}
 		}
 	}
 
+	public async addCert(issuerUrl: string, keyId: string, type: 'asymmetric', cert: Buffer): Promise<void>;
+	public async addCert(issuerUrl: string, keyId: string, type: 'symmetric', cert: string): Promise<void>;
 	public async addCert(issuerUrl: string, keyId: string, type: 'symmetric' | 'asymmetric', cert: string | Buffer): Promise<void> {
+		this.props.logger?.debug('JwtCertStore addCert', {issuerUrl, keyId, type});
 		this.isInitialized();
 		const now = Date.now();
 		if (!this.store.issuers[issuerUrl]) {
@@ -71,10 +70,12 @@ export class JwtCertStore implements IJwtCertStore {
 	}
 
 	public getCert(issuerUrl: string, keyId: string): Promise<Buffer | string | undefined> {
+		this.props.logger?.debug('JwtCertStore getCert', {issuerUrl, keyId});
 		this.isInitialized();
 		if (!issuerUrl || !keyId) {
-			return Promise.resolve(undefined);
+			throw new TypeError('Issuer URL and key ID are required');
 		}
+		this.props.logger?.debug('data', this.store.issuers?.[issuerUrl]?.keys);
 		return Promise.resolve(this.store.issuers?.[issuerUrl]?.keys[keyId]);
 	}
 
@@ -146,6 +147,7 @@ export class JwtCertStore implements IJwtCertStore {
 	 * Save the store to the cache file
 	 */
 	private async saveStore(): Promise<void> {
+		this.props.logger?.debug('JwtCertStore saveStore');
 		this.store._ts = Date.now();
 		if (this.props?.cacheFileName) {
 			await fs.promises.writeFile(this.props.cacheFileName, JSON.stringify(this, undefined, this.props.cachePretty ? 2 : 0));
@@ -153,15 +155,14 @@ export class JwtCertStore implements IJwtCertStore {
 	}
 
 	private buildJsonOutput() {
-		const output: CertStoreFile = {_ts: this.store._ts, issuers: {}};
+		const output: CertStoreFile = {_ts: this.store._ts, version: 1, issuers: {}};
 		for (const [issuerKey, issuer] of Object.entries(this.store.issuers)) {
 			output.issuers[issuerKey] = {_ts: issuer._ts, type: issuer.type, keys: {}};
+			// only add asymmetric keys to the file output
 			if (issuer.type === 'asymmetric') {
 				for (const [key, cert] of Object.entries(issuer.keys)) {
 					output.issuers[issuerKey].keys[key] = cert?.toString('base64');
 				}
-			} else {
-				output.issuers[issuerKey].keys = issuer.keys;
 			}
 		}
 		return output;
