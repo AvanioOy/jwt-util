@@ -1,4 +1,4 @@
-import {JwtPayload, VerifyErrors, verify} from 'jsonwebtoken';
+import {JwtPayload, verify, VerifyErrors} from 'jsonwebtoken';
 
 type JwtVerifyPromiseFunc<T = Record<string, unknown>> = (...params: Parameters<typeof verify>) => Promise<(JwtPayload & T) | undefined>;
 export const jwtVerifyPromise: JwtVerifyPromiseFunc = (token, secretOrPublicKey, options?) => {

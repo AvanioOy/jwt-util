@@ -12,6 +12,10 @@ function buildStringOrRegExpMatch(issuerUrl: string) {
 	};
 }
 
+export interface JwtAsymmetricTokenIssuerProps {
+	logger?: ILoggerLike;
+}
+
 export class JwtAsymmetricTokenIssuer implements IJwtTokenAsymmetricIssuer {
 	readonly name = 'JwtAsymmetricTokenIssuer';
 	public readonly type = 'asymmetric';
@@ -19,7 +23,7 @@ export class JwtAsymmetricTokenIssuer implements IJwtTokenAsymmetricIssuer {
 	protected store: Record<string, CertAsymmetricIssuer> = {};
 	protected logger?: ILoggerLike;
 	protected issuerUrls: (string | RegExp)[] = [];
-	constructor(issuerUrlRules: (string | RegExp)[], logger?: ILoggerLike) {
+	constructor(issuerUrlRules: (string | RegExp)[], {logger}: JwtAsymmetricTokenIssuerProps = {}) {
 		this.issuerUrls = issuerUrlRules;
 		this.logger = logger;
 		this.logger?.info(`${this.name} created for ${issuerUrlRules.length} issuers rules`);
@@ -46,12 +50,14 @@ export class JwtAsymmetricTokenIssuer implements IJwtTokenAsymmetricIssuer {
 	}
 
 	public add(issuerUrl: string, keyId: string, cert: Buffer) {
+		this.logger?.debug(`${this.name} add ${issuerUrl} ${keyId}`);
 		this.checkIssuer(issuerUrl);
 		this.store[issuerUrl].keys[keyId] = cert;
 		this.store[issuerUrl]._ts = Date.now();
 	}
 
 	public get(issuerUrl: string, keyId: string) {
+		this.logger?.debug(`${this.name} get ${issuerUrl} ${keyId}`);
 		this.checkIssuer(issuerUrl);
 		return Promise.resolve(this.store[issuerUrl].keys[keyId]);
 	}

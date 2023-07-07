@@ -24,9 +24,9 @@ export class JwtSymmetricTokenIssuer implements IJwtTokenSymmetricIssuer {
 		return issuerUrl in this.store;
 	}
 
-	public add(issuerUrl: string, keyId: string, cert: string) {
+	public add(issuerUrl: string, keyId: string, privateKey: string) {
 		this.checkIssuer(issuerUrl);
-		this.store[issuerUrl].keys[keyId] = cert;
+		this.store[issuerUrl].keys[keyId] = privateKey;
 		this.store[issuerUrl]._ts = Date.now();
 	}
 

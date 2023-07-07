@@ -1,13 +1,23 @@
-import * as path from 'path';
 import 'cross-fetch/polyfill';
-import {IOpenIdConfigCache} from '../interfaces/OpenIdConfig';
+import * as path from 'path';
 import {buildCertFrame, rsaPublicKeyPem} from '../lib/rsaPublicKeyPem';
+import {ExpireCache, ICacheOrAsync} from '@avanio/expire-cache';
+import {JwtAsymmetricTokenIssuer, JwtAsymmetricTokenIssuerProps} from './JwtAsymmetricTokenIssuer';
 import {IJwtKeys} from '../interfaces/JwtKeys';
-import {JwtAsymmetricTokenIssuer} from './JwtAsymmetricTokenIssuer';
+import {IOpenIdConfigCache} from '../interfaces/OpenIdConfig';
+
+export interface JwtAsymmetricDiscoveryTokenIssuerProps extends JwtAsymmetricTokenIssuerProps {
+	discoveryCache?: ICacheOrAsync<IOpenIdConfigCache>;
+}
 
 export class JwtAsymmetricDiscoveryTokenIssuer extends JwtAsymmetricTokenIssuer {
-	private configCache: Record<string, IOpenIdConfigCache | undefined> = {};
 	public readonly type = 'asymmetric';
+	private discoveryCache: ICacheOrAsync<IOpenIdConfigCache>;
+
+	constructor(issuerUrlRules: (string | RegExp)[], {discoveryCache, ...props}: JwtAsymmetricDiscoveryTokenIssuerProps = {}) {
+		super(issuerUrlRules, props);
+		this.discoveryCache = discoveryCache || new ExpireCache<IOpenIdConfigCache>(undefined, undefined, 86400000); // 24h
+	}
 
 	public async get(issuerUrl: string, keyId: string) {
 		this.checkIssuer(issuerUrl);
@@ -44,14 +54,14 @@ export class JwtAsymmetricDiscoveryTokenIssuer extends JwtAsymmetricTokenIssuer 
 			} else if (key.x5c && key.x5c.length > 0) {
 				this.store[issuerUrl].keys[key.kid] = buildCertFrame(key.x5c[0]);
 			} else {
-				this.logger?.warn(`JwtSymmetricDiscoveryTokenIssuer loadIssuerCerts  ${issuerUrl} unknown key type`);
+				this.logger?.warn(`JwtSymmetricDiscoveryTokenIssuer loadIssuerCerts ${issuerUrl} unknown key type`);
 			}
 		}
 	}
 
 	private async getConfiguration(issuerUrl: string): Promise<IOpenIdConfigCache> {
 		const now = new Date().getDate();
-		const currentConfig = this.configCache[issuerUrl];
+		const currentConfig = await this.discoveryCache.get(issuerUrl);
 		if (currentConfig && currentConfig.expires > now) {
 			return currentConfig;
 		}
@@ -65,11 +75,8 @@ export class JwtAsymmetricDiscoveryTokenIssuer extends JwtAsymmetricTokenIssuer 
 			this.logger?.error('fetch error: ' + res.statusText);
 			throw new Error('fetch error: ' + res.statusText);
 		}
-		const configCache = {
-			...(await res.json()),
-			expires: now + 86400000, // cache OpenId config for 24h
-		};
-		this.configCache[issuerUrl] = configCache;
+		const configCache: IOpenIdConfigCache = await res.json();
+		await this.discoveryCache.set(issuerUrl, configCache);
 		return configCache;
 	}
 }

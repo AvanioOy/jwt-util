@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as jwt from 'jsonwebtoken';
 
 export interface JwtIssuerPayload extends jwt.JwtPayload {
