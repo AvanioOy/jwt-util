@@ -43,35 +43,35 @@
     },
     "homepage": "https://github.com/AvanioOy/jwt-util#readme",
     "devDependencies": {
-        "@azure/msal-node": "^1.18.0",
-        "@types/chai": "^4.3.5",
-        "@types/chai-as-promised": "^7.1.5",
+        "@azure/msal-node": "^1.18.3",
+        "@types/chai": "^4.3.6",
+        "@types/chai-as-promised": "^7.1.6",
         "@types/jsonwebtoken": "^9.0.2",
         "@types/mocha": "^10.0.1",
-        "@types/node": "^18.16.19",
-        "@typescript-eslint/eslint-plugin": "^6.0.0",
-        "@typescript-eslint/parser": "^6.0.0",
-        "chai": "^4.3.7",
+        "@types/node": "^18.17.15",
+        "@typescript-eslint/eslint-plugin": "^6.7.0",
+        "@typescript-eslint/parser": "^6.7.0",
+        "chai": "^4.3.8",
         "chai-as-promised": "^7.1.1",
         "dotenv": "^16.3.1",
-        "eslint": "^8.44.0",
-        "eslint-config-prettier": "^8.8.0",
+        "eslint": "^8.49.0",
+        "eslint-config-prettier": "^8.10.0",
         "eslint-config-standard": "^17.1.0",
-        "eslint-plugin-deprecation": "^1.4.1",
+        "eslint-plugin-deprecation": "^1.5.0",
         "eslint-plugin-prettier": "^5.0.0",
         "eslint-plugin-sonarjs": "^0.19.0",
         "googleapis": "^122.0.0",
         "mocha": "^10.2.0",
-        "prettier": "^3.0.0",
+        "prettier": "^3.0.3",
         "source-map-support": "^0.5.21",
         "ts-node": "^10.9.1",
-        "typescript": "^5.1.6"
+        "typescript": "^5.2.2"
     },
     "dependencies": {
         "@avanio/auth-header": "^0.0.1",
         "@avanio/expire-cache": "^0.2.0",
         "@avanio/logger-like": "^0.1.1",
         "cross-fetch": "^4.0.0",
-        "jsonwebtoken": "^9.0.1"
+        "jsonwebtoken": "^9.0.2"
     }
 }

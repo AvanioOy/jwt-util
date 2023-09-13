@@ -26,7 +26,9 @@ export class JwtAzureMultitenantTokenIssuer implements IJwtTokenAsymmetricIssuer
 		if (this.props.allowedIssuers && this.props.allowedIssuers.length > 0 && !this.props.allowedIssuers.includes(issuerUrl)) {
 			return false;
 		}
-		return issuerUrl?.startsWith('https://sts.windows.net/');
+		const isSts = issuerUrl?.startsWith('https://sts.windows.net/');
+		const isLogin = issuerUrl?.startsWith('https://login.microsoftonline.com/');
+		return isSts || isLogin;
 	}
 
 	public add(issuerUrl: string, keyId: string, cert: Buffer) {
