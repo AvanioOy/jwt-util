@@ -30,7 +30,20 @@ export class JwtManager {
 		this.options = options;
 	}
 
-	public async verify<T extends Record<string, unknown>>(tokenOrBearer: string, options: VerifyOptions = {}): Promise<JwtResponse<T>> {
+	/**
+	 * JWT verify and cache
+	 * @param tokenOrBearer token or bearer string
+	 * @param options Jwt verify options
+	 * @param jwtBodyValidation callback to validate decoded jwt body before caching, must throw error if validation fails
+	 * @returns Jwt response with decoded body and isCached flag
+	 * @example
+	 * const {isCached, body} = await jwt.verify(tokenString, undefined, (body) => googleIdTokenZodSchema.strict().parse(body));
+	 */
+	public async verify<T extends Record<string, unknown>>(
+		tokenOrBearer: string,
+		options: VerifyOptions = {},
+		jwtBodyValidation?: (jwtBody: unknown) => T,
+	): Promise<JwtResponse<T>> {
 		try {
 			const currentToken = isAuthHeaderLikeString(tokenOrBearer) ? AuthHeader.fromString(tokenOrBearer) : tokenOrBearer;
 			// only allow bearer as auth type
@@ -44,6 +57,7 @@ export class JwtManager {
 			}
 			const secretOrPublicKey = await this.getSecretOrPublicKey(token);
 			const verifiedDecode = (await jwtVerifyPromise(token, secretOrPublicKey, options)) as T & JwtPayload;
+			jwtBodyValidation?.(verifiedDecode);
 			if (verifiedDecode.exp) {
 				await this.cache.set(token, verifiedDecode, new Date(verifiedDecode.exp * 1000));
 			}
