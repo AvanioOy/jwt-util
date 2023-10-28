@@ -1,6 +1,6 @@
 {
     "name": "@avanio/jwt-util",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "NodeJS JWT utils",
     "main": "./dist/index.js",
     "scripts": {
