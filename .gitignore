@@ -105,3 +105,6 @@ dist
 
 # jwt test cache
 test/.cache.json
+
+# unit test results
+test-results.xml

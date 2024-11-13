@@ -1,18 +1,12 @@
 /* eslint-disable sonarjs/no-duplicate-string */
-import 'mocha';
-import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
 import * as dotenv from 'dotenv';
+import {describe, expect, it} from 'vitest';
 import {IssuerManager, JwtAsymmetricDiscoveryTokenIssuer, JwtAzureMultitenantTokenIssuer, JwtManager} from '../src';
 import {getAzureAccessToken} from './lib/azure';
 import {getGoogleIdToken} from './lib/google';
 import {z} from 'zod';
 
 dotenv.config();
-
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
 
 const googleIdTokenSchema = z.object({
 	aud: z.string(),
@@ -34,7 +28,7 @@ describe('JwtManager', () => {
 	});
 	it('should validate azure token', async () => {
 		const jwt = new JwtManager(
-			new IssuerManager([new JwtAzureMultitenantTokenIssuer({allowedIssuers: [`https://sts.windows.net/${process.env.AZ_TENANT_ID}/`]})]),
+			new IssuerManager([new JwtAzureMultitenantTokenIssuer({allowedIssuers: [`https://sts.windows.net/${String(process.env.AZ_TENANT_ID)}/`]})]),
 		);
 		const token = await getAzureAccessToken();
 		const {isCached, body} = await jwt.verify(token);

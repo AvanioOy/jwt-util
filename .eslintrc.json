@@ -7,6 +7,7 @@
     },
     "plugins": [
         "@typescript-eslint",
+        "@stylistic/ts",
         "prettier",
         "sonarjs",
         "deprecation"
@@ -15,7 +16,7 @@
         "standard",
         "eslint:recommended",
         "plugin:@typescript-eslint/eslint-recommended",
-        "plugin:@typescript-eslint/recommended",
+        "plugin:@typescript-eslint/strict-type-checked",
         "plugin:prettier/recommended",
         "plugin:sonarjs/recommended"
     ],
@@ -49,14 +50,22 @@
             }
         ],
         "deprecation/deprecation": "warn",
-        "lines-between-class-members": "off",
-        "@typescript-eslint/lines-between-class-members": [
-            "warn",
-            "always",
-            {
-                "exceptAfterOverload": true,
-                "exceptAfterSingleLine": true
-            }
-        ]
+		"lines-between-class-members": "off",
+		"@stylistic/ts/lines-between-class-members": [
+			"warn",
+			"always",
+			{
+				"exceptAfterOverload": true,
+				"exceptAfterSingleLine": true
+			}
+		],
+		"@typescript-eslint/no-misused-promises": [
+			"error",
+			{
+				"checksVoidReturn": false
+			}
+		],
+		"@typescript-eslint/consistent-type-definitions": "off",
+		"@typescript-eslint/consistent-type-imports": ["error", {"prefer": "type-imports", "fixStyle": "inline-type-imports"}]
     }
 }

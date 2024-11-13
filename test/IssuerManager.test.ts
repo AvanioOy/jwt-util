@@ -1,15 +1,9 @@
 /* eslint-disable sonarjs/no-duplicate-string */
-import 'mocha';
-import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
 import * as dotenv from 'dotenv';
+import {describe, expect, it} from 'vitest';
 import {IssuerManager, JwtAsymmetricDiscoveryTokenIssuer, JwtAsymmetricTokenIssuer, JwtSymmetricTokenIssuer} from '../src';
 
 dotenv.config();
-
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
 
 const ISSUER_URL = 'http://localhost';
 

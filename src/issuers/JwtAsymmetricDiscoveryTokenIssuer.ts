@@ -1,18 +1,18 @@
-import 'cross-fetch/polyfill';
 import * as path from 'path';
 import {buildCertFrame, rsaPublicKeyPem} from '../lib/rsaPublicKeyPem';
-import {ExpireCache, ICacheOrAsync} from '@avanio/expire-cache';
-import {JwtAsymmetricTokenIssuer, JwtAsymmetricTokenIssuerProps} from './JwtAsymmetricTokenIssuer';
-import {IJwtKeys} from '../interfaces/JwtKeys';
-import {IOpenIdConfigCache} from '../interfaces/OpenIdConfig';
+import {JwtAsymmetricTokenIssuer, type JwtAsymmetricTokenIssuerProps} from './JwtAsymmetricTokenIssuer';
+import {ExpireCache} from '@avanio/expire-cache';
+import {type IAsyncCache} from '@luolapeikko/cache-types';
+import {type IJwtKeys} from '../interfaces/JwtKeys';
+import {type IOpenIdConfigCache} from '../interfaces/OpenIdConfig';
 
 export interface JwtAsymmetricDiscoveryTokenIssuerProps extends JwtAsymmetricTokenIssuerProps {
-	discoveryCache?: ICacheOrAsync<IOpenIdConfigCache>;
+	discoveryCache?: IAsyncCache<IOpenIdConfigCache>;
 }
 
 export class JwtAsymmetricDiscoveryTokenIssuer extends JwtAsymmetricTokenIssuer {
 	public readonly type = 'asymmetric';
-	private discoveryCache: ICacheOrAsync<IOpenIdConfigCache>;
+	private discoveryCache: IAsyncCache<IOpenIdConfigCache>;
 
 	constructor(issuerUrlRules: (string | RegExp)[], {discoveryCache, ...props}: JwtAsymmetricDiscoveryTokenIssuerProps = {}) {
 		super(issuerUrlRules, props);
@@ -21,13 +21,13 @@ export class JwtAsymmetricDiscoveryTokenIssuer extends JwtAsymmetricTokenIssuer 
 
 	public async get(issuerUrl: string, keyId: string) {
 		this.checkIssuer(issuerUrl);
-		let cert = this.store[issuerUrl].keys[keyId];
+		let cert = this.store[issuerUrl]?.keys[keyId];
 		if (cert) {
 			return cert;
 		}
 		await this.loadIssuerCerts(issuerUrl);
 		// try again after loading certs
-		cert = this.store[issuerUrl].keys[keyId];
+		cert = this.store[issuerUrl]?.keys[keyId];
 		if (cert) {
 			return cert;
 		}
@@ -47,11 +47,21 @@ export class JwtAsymmetricDiscoveryTokenIssuer extends JwtAsymmetricTokenIssuer 
 		if (!res.ok) {
 			throw new Error(`fetch error: ${res.statusText}`);
 		}
+		if (!this.store[issuerUrl]) {
+			this.store[issuerUrl] = {
+				_ts: 0,
+				type: 'asymmetric',
+				keys: {},
+			};
+		}
 		const certList = (await res.json()) as IJwtKeys;
 		for (const key of certList.keys) {
 			if (key.n && key.e) {
 				this.store[issuerUrl].keys[key.kid] = buildCertFrame(rsaPublicKeyPem(key.n, key.e));
 			} else if (key.x5c && key.x5c.length > 0) {
+				if (!key.x5c[0]) {
+					throw new Error(`JwtSymmetricDiscoveryTokenIssuer ${issuerUrl} x5c[0] is empty`);
+				}
 				this.store[issuerUrl].keys[key.kid] = buildCertFrame(key.x5c[0]);
 			} else {
 				this.logger?.warn(`JwtSymmetricDiscoveryTokenIssuer loadIssuerCerts ${issuerUrl} unknown key type`);
@@ -75,7 +85,7 @@ export class JwtAsymmetricDiscoveryTokenIssuer extends JwtAsymmetricTokenIssuer 
 			this.logger?.error('fetch error: ' + res.statusText);
 			throw new Error('fetch error: ' + res.statusText);
 		}
-		const configCache: IOpenIdConfigCache = await res.json();
+		const configCache = (await res.json()) as IOpenIdConfigCache;
 		await this.discoveryCache.set(issuerUrl, configCache);
 		return configCache;
 	}

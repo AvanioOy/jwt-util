@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import * as jwt from 'jsonwebtoken';
+import type * as jwt from 'jsonwebtoken';
 
 export interface JwtIssuerPayload extends jwt.JwtPayload {
 	iss: string;
@@ -43,7 +43,7 @@ export function isIssuerToken(decoded: unknown): decoded is FullDecodedIssuerTok
 		decoded !== null &&
 		'payload' in (decoded as FullDecodedTokenStructure) &&
 		'header' in (decoded as FullDecodedTokenStructure) &&
-		typeof (decoded as FullDecodedTokenStructure)?.payload?.iss === 'string'
+		typeof (decoded as FullDecodedTokenStructure).payload.iss === 'string'
 	);
 }
 

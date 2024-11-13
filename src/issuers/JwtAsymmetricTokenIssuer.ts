@@ -1,6 +1,6 @@
-import {CertAsymmetricIssuer, CertAsymmetricIssuerFile, CertSymmetricIssuer} from '../interfaces/IJwtCertStore';
-import {IJwtTokenAsymmetricIssuer} from '../interfaces/IJwtTokenIssuer';
-import {ILoggerLike} from '@avanio/logger-like';
+import {type CertAsymmetricIssuer, type CertAsymmetricIssuerFile, type CertSymmetricIssuer} from '../interfaces/IJwtCertStore';
+import {type IJwtTokenAsymmetricIssuer} from '../interfaces/IJwtTokenIssuer';
+import {type ILoggerLike} from '@avanio/logger-like';
 
 function buildStringOrRegExpMatch(issuerUrl: string) {
 	return function stringOrRegExpMatch(issuerUrlRule: string | RegExp): boolean {
@@ -26,12 +26,15 @@ export class JwtAsymmetricTokenIssuer implements IJwtTokenAsymmetricIssuer {
 	constructor(issuerUrlRules: (string | RegExp)[], {logger}: JwtAsymmetricTokenIssuerProps = {}) {
 		this.issuerUrls = issuerUrlRules;
 		this.logger = logger;
-		this.logger?.info(`${this.name} created for ${issuerUrlRules.length} issuers rules`);
+		this.logger?.info(`${this.name} created for ${issuerUrlRules.length.toString()} issuers rules`);
 	}
 
 	public listKeyIds(issuerUrl: string): Promise<string[]> {
 		this.logger?.debug(`${this.name} listKeyIds ${issuerUrl}`);
 		this.checkIssuer(issuerUrl);
+		if (!this.store[issuerUrl]) {
+			return Promise.resolve([]);
+		}
 		return Promise.resolve(Object.keys(this.store[issuerUrl].keys));
 	}
 
@@ -52,6 +55,13 @@ export class JwtAsymmetricTokenIssuer implements IJwtTokenAsymmetricIssuer {
 	public add(issuerUrl: string, keyId: string, cert: Buffer) {
 		this.logger?.debug(`${this.name} add ${issuerUrl} ${keyId}`);
 		this.checkIssuer(issuerUrl);
+		if (!this.store[issuerUrl]) {
+			this.store[issuerUrl] = {
+				_ts: 0,
+				type: this.type,
+				keys: {},
+			};
+		}
 		this.store[issuerUrl].keys[keyId] = cert;
 		this.store[issuerUrl]._ts = Date.now();
 	}
@@ -59,7 +69,7 @@ export class JwtAsymmetricTokenIssuer implements IJwtTokenAsymmetricIssuer {
 	public get(issuerUrl: string, keyId: string) {
 		this.logger?.debug(`${this.name} get ${issuerUrl} ${keyId}`);
 		this.checkIssuer(issuerUrl);
-		return Promise.resolve(this.store[issuerUrl].keys[keyId]);
+		return Promise.resolve(this.store[issuerUrl]?.keys[keyId]);
 	}
 
 	public import(issuers: Record<string, CertSymmetricIssuer | CertAsymmetricIssuerFile>) {

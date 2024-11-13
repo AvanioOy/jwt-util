@@ -1,15 +1,9 @@
 {
-    "extends": "./tsconfig.json",
-    "compilerOptions": {
-      "target": "es2020",
-      "module": "commonjs"
-    },
-    "importHelpers": false,
-    "include": [
-      "src/**/*",
-      "test/**/*"
-    ],
-    "exclude": [
-      "node_modules"
-    ]
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"rootDir": "./"
+	},
+	"importHelpers": false,
+	"include": ["src", "test"],
+	"exclude": ["node_modules"]
 }

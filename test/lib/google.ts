@@ -1,5 +1,5 @@
-import {google} from 'googleapis';
 import {azureMultilineEnvFix} from './common';
+import {google} from 'googleapis';
 
 function getAccessToken(): Promise<string> {
 	const clientKey = azureMultilineEnvFix(process.env.GOOGLE_CLIENT_KEY);
@@ -25,7 +25,7 @@ function getAccessToken(): Promise<string> {
 	});
 }
 
-export const getGoogleIdToken = async () => {
+export async function getGoogleIdToken() {
 	const body = JSON.stringify({
 		audience: process.env.GOOGLE_CLIENT_EMAIL,
 		delegates: [],
@@ -34,15 +34,15 @@ export const getGoogleIdToken = async () => {
 	const headers = new Headers();
 	headers.set('Authorization', 'Bearer ' + (await getAccessToken()));
 	headers.set('Content-Type', 'application/json');
-	headers.set('Content-Length', '' + body.length);
-	const res = await fetch(`https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${process.env.GOOGLE_CLIENT_EMAIL}:generateIdToken`, {
+	headers.set('Content-Length', body.length.toString());
+	const res = await fetch(`https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${String(process.env.GOOGLE_CLIENT_EMAIL)}:generateIdToken`, {
 		body,
 		headers,
 		method: 'POST',
 	});
 	if (res.status !== 200) {
-		throw new Error('getGoogleIdToken code ' + res.status);
+		throw new Error(`getGoogleIdToken code ${res.status.toString()}`);
 	}
-	const data = await res.json();
+	const data = (await res.json()) as {token: string};
 	return data.token;
-};
+}

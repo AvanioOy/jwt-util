@@ -1,4 +1,4 @@
-import {CertAsymmetricIssuerFile, CertSymmetricIssuer} from './IJwtCertStore';
+import {type CertAsymmetricIssuerFile, type CertSymmetricIssuer} from './IJwtCertStore';
 
 export interface JwtIssuerSymmetricObject {
 	_ts: Date;

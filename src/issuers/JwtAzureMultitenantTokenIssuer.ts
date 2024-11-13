@@ -1,6 +1,6 @@
-import {CertAsymmetricIssuerFile, CertSymmetricIssuer} from '../interfaces/IJwtCertStore';
-import {JwtAsymmetricDiscoveryTokenIssuer, JwtAsymmetricDiscoveryTokenIssuerProps} from './JwtAsymmetricDiscoveryTokenIssuer';
-import {IJwtTokenAsymmetricIssuer} from '../interfaces/IJwtTokenIssuer';
+import {type CertAsymmetricIssuerFile, type CertSymmetricIssuer} from '../interfaces/IJwtCertStore';
+import {JwtAsymmetricDiscoveryTokenIssuer, type JwtAsymmetricDiscoveryTokenIssuerProps} from './JwtAsymmetricDiscoveryTokenIssuer';
+import {type IJwtTokenAsymmetricIssuer} from '../interfaces/IJwtTokenIssuer';
 
 interface JwtAzureMultitenantTokenIssuerProps extends JwtAsymmetricDiscoveryTokenIssuerProps {
 	allowedIssuers?: string[];
@@ -14,7 +14,7 @@ export class JwtAzureMultitenantTokenIssuer implements IJwtTokenAsymmetricIssuer
 
 	constructor(props: JwtAzureMultitenantTokenIssuerProps = {}) {
 		this.props = props;
-		this.props.logger?.info(`JwtAzureMultitenantTokenIssuer created for ${this.props.allowedIssuers?.length} issuers rules`);
+		this.props.logger?.info(`JwtAzureMultitenantTokenIssuer created for ${String(this.props.allowedIssuers?.length)} issuers rules`);
 	}
 
 	public listKeyIds(issuerUrl: string): Promise<string[]> {
@@ -26,8 +26,8 @@ export class JwtAzureMultitenantTokenIssuer implements IJwtTokenAsymmetricIssuer
 		if (this.props.allowedIssuers && this.props.allowedIssuers.length > 0 && !this.props.allowedIssuers.includes(issuerUrl)) {
 			return false;
 		}
-		const isSts = issuerUrl?.startsWith('https://sts.windows.net/');
-		const isLogin = issuerUrl?.startsWith('https://login.microsoftonline.com/');
+		const isSts = issuerUrl.startsWith('https://sts.windows.net/');
+		const isLogin = issuerUrl.startsWith('https://login.microsoftonline.com/');
 		return isSts || isLogin;
 	}
 

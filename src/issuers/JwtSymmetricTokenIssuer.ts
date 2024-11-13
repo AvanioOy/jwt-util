@@ -1,5 +1,5 @@
-import {CertSymmetricIssuer} from '../interfaces/IJwtCertStore';
-import {IJwtTokenSymmetricIssuer} from '../interfaces/IJwtTokenIssuer';
+import {type CertSymmetricIssuer} from '../interfaces/IJwtCertStore';
+import {type IJwtTokenSymmetricIssuer} from '../interfaces/IJwtTokenIssuer';
 
 export class JwtSymmetricTokenIssuer implements IJwtTokenSymmetricIssuer {
 	public readonly type = 'symmetric';
@@ -17,6 +17,9 @@ export class JwtSymmetricTokenIssuer implements IJwtTokenSymmetricIssuer {
 
 	public listKeyIds(issuerUrl: string): Promise<string[]> {
 		this.checkIssuer(issuerUrl);
+		if (!this.store[issuerUrl]) {
+			return Promise.resolve([]);
+		}
 		return Promise.resolve(Object.keys(this.store[issuerUrl].keys));
 	}
 
@@ -26,13 +29,20 @@ export class JwtSymmetricTokenIssuer implements IJwtTokenSymmetricIssuer {
 
 	public add(issuerUrl: string, keyId: string, privateKey: string) {
 		this.checkIssuer(issuerUrl);
+		if (!this.store[issuerUrl]) {
+			this.store[issuerUrl] = {
+				_ts: 0,
+				type: this.type,
+				keys: {},
+			};
+		}
 		this.store[issuerUrl].keys[keyId] = privateKey;
 		this.store[issuerUrl]._ts = Date.now();
 	}
 
 	public get(issuerUrl: string, keyId: string) {
 		this.checkIssuer(issuerUrl);
-		return Promise.resolve(this.store[issuerUrl].keys[keyId]);
+		return Promise.resolve(this.store[issuerUrl]?.keys[keyId]);
 	}
 
 	public import() {

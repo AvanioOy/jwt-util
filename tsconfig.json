@@ -2,17 +2,12 @@
 	"compilerOptions": {
 		"module": "commonjs",
 		"target": "ES2020",
-		"lib": [
-			"ES2020",
-			"dom"
-		],
+		"lib": ["ES2020", "dom"],
 		"rootDir": "./src",
 		"outDir": "./dist",
 		"moduleResolution": "node",
 		"sourceRoot": "./src",
-		"types": [
-			"node"
-		],
+		"types": ["node"],
 		"declaration": true,
 		"removeComments": false,
 		"sourceMap": false,
@@ -24,15 +19,9 @@
 		"noImplicitAny": true,
 		"importHelpers": false,
 		"strictNullChecks": true,
-		"noUnusedLocals": true
+		"noUnusedLocals": true,
+		"noUncheckedIndexedAccess": true
 	},
-	"include": [
-		"src/**/*",
-		"src/**/**/*"
-	],
-	"exclude": [
-		"node_modules",
-		"**/*.spec.ts",
-		"test"
-	]
+	"include": ["src"],
+	"exclude": ["node_modules", "test"]
 }

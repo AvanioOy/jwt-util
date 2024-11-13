@@ -1,6 +1,6 @@
-import {IIssuerManager} from './interfaces/IIssuerManager';
-import {IJwtTokenIssuer} from './interfaces/IJwtTokenIssuer';
-import {ILoggerLike} from '@avanio/logger-like';
+import {type IIssuerManager} from './interfaces/IIssuerManager';
+import {type IJwtTokenIssuer} from './interfaces/IJwtTokenIssuer';
+import {type ILoggerLike} from '@avanio/logger-like';
 
 interface IssuerManagerOptions {
 	logger?: ILoggerLike;
@@ -46,7 +46,7 @@ export class IssuerManager implements IIssuerManager {
 	 * Get secret or public key for issuer and key id from all issuers
 	 */
 	public get(issuerUrl: string, keyId: string): Promise<string | Buffer | undefined> {
-		this.options.logger?.debug(`Getting issuer: ${issuerUrl} '${keyId}' size: ${this.issuers.size}`);
+		this.options.logger?.debug(`Getting issuer: ${issuerUrl} '${keyId}' size: ${this.issuers.size.toString()}`);
 		const issuer = this.getIssuers(issuerUrl)[0];
 		if (!issuer) {
 			this.options.logger?.debug(`Issuer not found: ${issuerUrl}`);

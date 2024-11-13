@@ -1,4 +1,4 @@
-import {JwtPayload} from 'jsonwebtoken';
+import {type JwtPayload} from 'jsonwebtoken';
 
 /**
  * Response have decoded body and information if was already verified and returned from cache

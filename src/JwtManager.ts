@@ -1,12 +1,13 @@
 import {AuthHeader, isAuthHeaderLikeString} from '@avanio/auth-header';
-import {decode, Jwt, JwtPayload, VerifyOptions} from 'jsonwebtoken';
-import {ExpireCache, ICacheOrAsync} from '@avanio/expire-cache';
-import {IIssuerManager} from './interfaces/IIssuerManager';
-import {ILoggerLike} from '@avanio/logger-like';
+import {decode, type Jwt, type JwtPayload, type VerifyOptions} from 'jsonwebtoken';
+import {ExpireCache} from '@avanio/expire-cache';
+import {type IAsyncCache} from '@luolapeikko/cache-types';
+import {type IIssuerManager} from './interfaces/IIssuerManager';
+import {type ILoggerLike} from '@avanio/logger-like';
 import {JwtBodyError} from './lib/JwtBodyError';
 import {JwtError} from './lib/JwtError';
 import {JwtHeaderError} from './lib/JwtHeaderError';
-import {JwtResponse} from './interfaces/JwtResponse';
+import {type JwtResponse} from './interfaces/JwtResponse';
 import {jwtVerifyPromise} from './lib/jwt';
 
 type JwtManagerOptions = {
@@ -22,9 +23,9 @@ type JwtManagerOptions = {
 export class JwtManager {
 	private issuerManager: IIssuerManager;
 	private options: JwtManagerOptions;
-	private cache: ICacheOrAsync<JwtPayload>;
+	private cache: IAsyncCache<JwtPayload>;
 
-	constructor(issuerManager: IIssuerManager, cache?: ICacheOrAsync<JwtPayload>, options: JwtManagerOptions = {}) {
+	constructor(issuerManager: IIssuerManager, cache?: IAsyncCache<JwtPayload>, options: JwtManagerOptions = {}) {
 		this.issuerManager = issuerManager;
 		this.cache = cache || new ExpireCache<JwtPayload>();
 		this.options = options;
@@ -51,7 +52,7 @@ export class JwtManager {
 				throw new JwtHeaderError('token header: wrong authentication header type');
 			}
 			const token = currentToken instanceof AuthHeader ? currentToken.credentials : currentToken;
-			const cached = (await this.cache.get(token)) as T & JwtPayload;
+			const cached = (await this.cache.get(token)) as (T & JwtPayload) | undefined;
 			if (cached) {
 				return {body: cached, isCached: true};
 			}
@@ -81,11 +82,11 @@ export class JwtManager {
 		if (!decoded) {
 			throw new JwtError('empty token');
 		}
-		const payload = decoded?.payload || {};
+		const payload = decoded.payload || {};
 		if (typeof payload === 'string') {
 			throw new JwtBodyError('token body: invalid token');
 		}
-		const {kid} = decoded?.header || {};
+		const {kid} = decoded.header;
 		const {iss} = payload;
 		if (!kid) {
 			throw new JwtHeaderError('token header: missing kid parameter');
