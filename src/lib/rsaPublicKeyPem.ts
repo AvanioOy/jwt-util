@@ -38,7 +38,7 @@ export const buildCertFrame = (der: string): Buffer => {
 
 function prepadSigned(hexStr: string) {
 	const msb = hexStr[0];
-	if (msb < '0' || msb > '7') {
+	if (msb !== undefined && (msb < '0' || msb > '7')) {
 		return '00' + hexStr;
 	} else {
 		return hexStr;
