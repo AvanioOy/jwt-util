@@ -1,6 +1,11 @@
 import {azureMultilineEnvFix} from './common';
 import {google} from 'googleapis';
 
+export function haveGoogleEnvVariables() {
+	const {GOOGLE_CLIENT_EMAIL, GOOGLE_CLIENT_KEY} = process.env;
+	return Boolean(GOOGLE_CLIENT_EMAIL && GOOGLE_CLIENT_KEY);
+}
+
 function getAccessToken(): Promise<string> {
 	const clientKey = azureMultilineEnvFix(process.env.GOOGLE_CLIENT_KEY);
 	return new Promise((resolve, reject) => {

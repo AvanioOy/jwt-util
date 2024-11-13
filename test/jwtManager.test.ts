@@ -1,9 +1,9 @@
 /* eslint-disable sonarjs/no-duplicate-string */
 import * as dotenv from 'dotenv';
 import {describe, expect, it} from 'vitest';
+import {getAzureAccessToken, haveAzureEnvVariables} from './lib/azure';
+import {getGoogleIdToken, haveGoogleEnvVariables} from './lib/google';
 import {IssuerManager, JwtAsymmetricDiscoveryTokenIssuer, JwtAzureMultitenantTokenIssuer, JwtManager} from '../src';
-import {getAzureAccessToken} from './lib/azure';
-import {getGoogleIdToken} from './lib/google';
 import {z} from 'zod';
 
 dotenv.config();
@@ -20,13 +20,13 @@ const googleIdTokenSchema = z.object({
 });
 
 describe('JwtManager', () => {
-	it('should validate google id token', async () => {
+	it('should validate google id token', {skip: !haveGoogleEnvVariables()}, async () => {
 		const jwt = new JwtManager(new IssuerManager([new JwtAsymmetricDiscoveryTokenIssuer(['https://accounts.google.com'])]));
 		const {isCached, body} = await jwt.verify(await getGoogleIdToken(), undefined, (body) => googleIdTokenSchema.strict().parse(body));
 		expect(body).to.have.all.keys(['aud', 'azp', 'email', 'email_verified', 'exp', 'iat', 'iss', 'sub']);
 		expect(isCached).to.be.eq(false);
 	});
-	it('should validate azure token', async () => {
+	it('should validate azure token', {skip: !haveAzureEnvVariables()}, async () => {
 		const jwt = new JwtManager(
 			new IssuerManager([new JwtAzureMultitenantTokenIssuer({allowedIssuers: [`https://sts.windows.net/${String(process.env.AZ_TENANT_ID)}/`]})]),
 		);

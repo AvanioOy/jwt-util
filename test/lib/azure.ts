@@ -1,5 +1,10 @@
 import {ConfidentialClientApplication} from '@azure/msal-node';
 
+export function haveAzureEnvVariables() {
+	const {AZ_CLIENT_ID, AZ_CLIENT_SECRET, AZ_TENANT_ID} = process.env;
+	return Boolean(AZ_CLIENT_ID && AZ_CLIENT_SECRET && AZ_TENANT_ID);
+}
+
 export async function getAzureAccessToken() {
 	const {AZ_CLIENT_ID, AZ_CLIENT_SECRET, AZ_TENANT_ID} = process.env;
 	if (!AZ_CLIENT_ID || !AZ_CLIENT_SECRET || !AZ_TENANT_ID) {
