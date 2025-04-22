@@ -1,32 +1,31 @@
-/* eslint-disable sonarjs/no-duplicate-string */
 import * as dotenv from 'dotenv';
 import {describe, expect, it} from 'vitest';
 import {IssuerManager, JwtAsymmetricDiscoveryTokenIssuer, JwtAsymmetricTokenIssuer, JwtSymmetricTokenIssuer} from '../src';
 
 dotenv.config();
 
-const ISSUER_URL = 'http://localhost';
+const issuerUrl = 'http://localhost';
 
 describe('IssuerManager', () => {
 	it('should store and get symmetric key', async () => {
-		const issuer = new JwtSymmetricTokenIssuer([ISSUER_URL]);
-		issuer.add(ISSUER_URL, '01', 'secret');
+		const issuer = new JwtSymmetricTokenIssuer([issuerUrl]);
+		issuer.add(issuerUrl, '01', 'secret');
 		const issuerManager = new IssuerManager();
 		issuerManager.add(issuer);
-		expect(issuerManager.issuerSolverCount(ISSUER_URL)).to.be.eq(1);
+		expect(issuerManager.issuerSolverCount(issuerUrl)).to.be.eq(1);
 		expect(issuerManager.issuerSolverCount('http://localhost2')).to.be.eq(0);
-		expect(await issuerManager.get(ISSUER_URL, '01')).to.be.eq('secret');
-		expect(await issuerManager.get(ISSUER_URL, '02')).to.be.eq(undefined);
+		expect(await issuerManager.get(issuerUrl, '01')).to.be.eq('secret');
+		expect(await issuerManager.get(issuerUrl, '02')).to.be.eq(undefined);
 	});
 	it('should store and get asymmetric key', async () => {
-		const issuer = new JwtAsymmetricTokenIssuer([ISSUER_URL]);
-		issuer.add(ISSUER_URL, '01', Buffer.from('secret'));
+		const issuer = new JwtAsymmetricTokenIssuer([issuerUrl]);
+		issuer.add(issuerUrl, '01', Buffer.from('secret'));
 		const issuerManager = new IssuerManager();
 		issuerManager.add(issuer);
-		expect(issuerManager.issuerSolverCount(ISSUER_URL)).to.be.eq(1);
+		expect(issuerManager.issuerSolverCount(issuerUrl)).to.be.eq(1);
 		expect(issuerManager.issuerSolverCount('http://localhost2')).to.be.eq(0);
-		expect((await issuerManager.get(ISSUER_URL, '01'))?.toString()).to.be.eq('secret');
-		expect(await issuerManager.get(ISSUER_URL, '02')).to.be.eq(undefined);
+		expect((await issuerManager.get(issuerUrl, '01'))?.toString()).to.be.eq('secret');
+		expect(await issuerManager.get(issuerUrl, '02')).to.be.eq(undefined);
 	});
 	it('should store and get issuer asymmetric key', async () => {
 		const issuer = new JwtAsymmetricDiscoveryTokenIssuer(['https://accounts.google.com']);

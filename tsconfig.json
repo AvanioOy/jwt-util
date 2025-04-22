@@ -20,7 +20,10 @@
 		"importHelpers": false,
 		"strictNullChecks": true,
 		"noUnusedLocals": true,
-		"noUncheckedIndexedAccess": true
+		"noUncheckedIndexedAccess": true,
+		"strict": true,
+		"strictBindCallApply": true,
+		"noImplicitOverride":  true
 	},
 	"include": ["src"],
 	"exclude": ["node_modules", "test"]

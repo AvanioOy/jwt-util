@@ -1,54 +1,49 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type * as jwt from 'jsonwebtoken';
 
-export interface JwtIssuerPayload extends jwt.JwtPayload {
-	iss: string;
-}
+export type TokenPayload<T = Record<string, any>> = jwt.JwtPayload & T;
+export type TokenIssuerPayload<T = Record<string, any>> = Omit<jwt.JwtPayload, 'iss'> & {iss: string} & T;
 
-export interface TokenPayloadCommon extends Record<string, any> {
-	aud?: string;
-	exp?: number;
-	iat?: number;
-	iss?: string;
-	sub?: string;
-	nonce?: string;
-}
-
-export interface TokenIssuerPayloadCommon extends TokenPayloadCommon {
-	iss: string;
-}
-
-export type TokenPayload<T = Record<string, any>> = TokenPayloadCommon & T;
-export type TokenIssuerPayload<T = Record<string, any>> = TokenIssuerPayloadCommon & T;
-
-export interface TokenHeader extends Record<string, any> {
+export type TokenHeader = {
+	[key: string]: any;
 	kid?: string;
 	alg: jwt.Algorithm | undefined;
 	typ: string | undefined;
-}
+};
 
-export interface FullDecodedTokenStructure {
-	header: TokenHeader;
-	payload: TokenPayload;
-}
+export type FullDecodedTokenStructure = {
+	header: jwt.JwtHeader;
+	payload: jwt.JwtPayload;
+};
 
-export interface FullDecodedIssuerTokenStructure {
-	header: TokenHeader;
+export type FullDecodedIssuerTokenStructure = {
+	header: jwt.JwtHeader;
 	payload: TokenIssuerPayload;
+};
+
+/**
+ * Checks if the decoded token is a FullDecodedIssuerTokenStructure.
+ * @param decoded - The token to check.
+ * @returns True if the token is a FullDecodedIssuerTokenStructure, otherwise false.
+ */
+export function isIssuerToken(decoded: unknown): decoded is FullDecodedIssuerTokenStructure {
+	return isTokenFullDecoded(decoded) && typeof decoded.payload.iss === 'string';
 }
 
-export function isIssuerToken(decoded: unknown): decoded is FullDecodedIssuerTokenStructure {
+/**
+ * Checks if the decoded token is a FullDecodedTokenStructure.
+ * @param decoded - The token to check.
+ * @returns True if the token is a FullDecodedTokenStructure, otherwise false.
+ */
+export function isTokenFullDecoded(decoded: unknown): decoded is FullDecodedTokenStructure {
 	return (
 		typeof decoded === 'object' &&
 		decoded !== null &&
-		'payload' in (decoded as FullDecodedTokenStructure) &&
-		'header' in (decoded as FullDecodedTokenStructure) &&
-		typeof (decoded as FullDecodedTokenStructure).payload.iss === 'string'
-	);
-}
-
-export function isTokenFullDecoded(decoded: unknown): decoded is FullDecodedTokenStructure {
-	return (
-		typeof decoded === 'object' && decoded !== null && 'payload' in (decoded as FullDecodedTokenStructure) && 'header' in (decoded as FullDecodedTokenStructure)
+		'payload' in decoded &&
+		typeof decoded.payload === 'object' &&
+		'header' in decoded &&
+		typeof decoded.header === 'object' &&
+		'signature' in decoded &&
+		typeof decoded.signature === 'string'
 	);
 }

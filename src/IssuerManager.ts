@@ -1,8 +1,8 @@
+import {type ILoggerLike} from '@avanio/logger-like';
 import {type IIssuerManager} from './interfaces/IIssuerManager';
 import {type IJwtTokenIssuer} from './interfaces/IJwtTokenIssuer';
-import {type ILoggerLike} from '@avanio/logger-like';
 
-interface IssuerManagerOptions {
+interface IIssuerManagerOptions {
 	logger?: ILoggerLike;
 }
 
@@ -17,14 +17,15 @@ interface IssuerManagerOptions {
  */
 export class IssuerManager implements IIssuerManager {
 	private issuers: Set<IJwtTokenIssuer>;
-	private options: IssuerManagerOptions;
-	constructor(issuers: IJwtTokenIssuer[] | Set<IJwtTokenIssuer> = [], options: IssuerManagerOptions = {}) {
+	private options: IIssuerManagerOptions;
+	constructor(issuers: IJwtTokenIssuer[] | Set<IJwtTokenIssuer> = [], options: IIssuerManagerOptions = {}) {
 		this.issuers = new Set(issuers);
 		this.options = options;
 	}
 
 	/**
 	 * Add issuer(s) to set of issuers
+	 * @param issuer - issuer
 	 */
 	public add(issuer: IJwtTokenIssuer | IJwtTokenIssuer[]): void {
 		const issuers = Array.isArray(issuer) ? issuer : [issuer];
@@ -36,6 +37,8 @@ export class IssuerManager implements IIssuerManager {
 
 	/**
 	 * Delete issuer from set of issuers
+	 * @param issuer - issuer
+	 * @returns boolean if deleted
 	 */
 	public delete(issuer: IJwtTokenIssuer): boolean {
 		this.options.logger?.debug(`Deleting issuer: ${issuer.type}`);
@@ -44,8 +47,11 @@ export class IssuerManager implements IIssuerManager {
 
 	/**
 	 * Get secret or public key for issuer and key id from all issuers
+	 * @param issuerUrl - issuer url
+	 * @param keyId - JWT key id
+	 * @returns JWT string (symmetric), buffer (asymmetric) or undefined
 	 */
-	public get(issuerUrl: string, keyId: string): Promise<string | Buffer | undefined> {
+	public get(issuerUrl: string, keyId: string): string | Buffer | undefined | Promise<string | Buffer | undefined> {
 		this.options.logger?.debug(`Getting issuer: ${issuerUrl} '${keyId}' size: ${this.issuers.size.toString()}`);
 		const issuer = this.getIssuers(issuerUrl)[0];
 		if (!issuer) {

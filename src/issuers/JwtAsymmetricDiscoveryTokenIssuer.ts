@@ -1,25 +1,25 @@
 import * as path from 'path';
-import {buildCertFrame, rsaPublicKeyPem} from '../lib/rsaPublicKeyPem';
-import {JwtAsymmetricTokenIssuer, type JwtAsymmetricTokenIssuerProps} from './JwtAsymmetricTokenIssuer';
 import {ExpireCache} from '@avanio/expire-cache';
 import {type IAsyncCache} from '@luolapeikko/cache-types';
 import {type IJwtKeys} from '../interfaces/JwtKeys';
 import {type IOpenIdConfigCache} from '../interfaces/OpenIdConfig';
+import {buildCertFrame, rsaPublicKeyPem} from '../lib/rsaPublicKeyPem';
+import {type IJwtAsymmetricTokenIssuerProps, JwtAsymmetricTokenIssuer} from './JwtAsymmetricTokenIssuer';
 
-export interface JwtAsymmetricDiscoveryTokenIssuerProps extends JwtAsymmetricTokenIssuerProps {
+export interface IJwtAsymmetricDiscoveryTokenIssuerProps extends IJwtAsymmetricTokenIssuerProps {
 	discoveryCache?: IAsyncCache<IOpenIdConfigCache>;
 }
 
 export class JwtAsymmetricDiscoveryTokenIssuer extends JwtAsymmetricTokenIssuer {
-	public readonly type = 'asymmetric';
+	public override readonly type = 'asymmetric';
 	private discoveryCache: IAsyncCache<IOpenIdConfigCache>;
 
-	constructor(issuerUrlRules: (string | RegExp)[], {discoveryCache, ...props}: JwtAsymmetricDiscoveryTokenIssuerProps = {}) {
+	constructor(issuerUrlRules: (string | RegExp)[], {discoveryCache, ...props}: IJwtAsymmetricDiscoveryTokenIssuerProps = {}) {
 		super(issuerUrlRules, props);
-		this.discoveryCache = discoveryCache || new ExpireCache<IOpenIdConfigCache>(undefined, undefined, 86400000); // 24h
+		this.discoveryCache = discoveryCache ?? new ExpireCache<IOpenIdConfigCache>(undefined, undefined, 86400000); // 24h
 	}
 
-	public async get(issuerUrl: string, keyId: string) {
+	public override async get(issuerUrl: string, keyId: string) {
 		this.checkIssuer(issuerUrl);
 		let cert = this.store[issuerUrl]?.keys[keyId];
 		if (cert) {
@@ -39,6 +39,10 @@ export class JwtAsymmetricDiscoveryTokenIssuer extends JwtAsymmetricTokenIssuer 
 		return this.loadIssuerCerts(issuerUrl);
 	}
 
+	public override toString() {
+		return `JwtAsymmetricDiscoveryTokenIssuer`;
+	}
+
 	private async loadIssuerCerts(issuerUrl: string): Promise<void> {
 		this.logger?.debug(`JwtSymmetricDiscoveryTokenIssuer loadIssuerCerts ${issuerUrl}`);
 		const config = await this.getConfiguration(issuerUrl);
@@ -47,13 +51,11 @@ export class JwtAsymmetricDiscoveryTokenIssuer extends JwtAsymmetricTokenIssuer 
 		if (!res.ok) {
 			throw new Error(`fetch error: ${res.statusText}`);
 		}
-		if (!this.store[issuerUrl]) {
-			this.store[issuerUrl] = {
-				_ts: 0,
-				type: 'asymmetric',
-				keys: {},
-			};
-		}
+		this.store[issuerUrl] ??= {
+			_ts: 0,
+			type: 'asymmetric',
+			keys: {},
+		};
 		const certList = (await res.json()) as IJwtKeys;
 		for (const key of certList.keys) {
 			if (key.n && key.e) {

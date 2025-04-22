@@ -15,12 +15,12 @@ export class JwtSymmetricTokenIssuer implements IJwtTokenSymmetricIssuer {
 		}, {});
 	}
 
-	public listKeyIds(issuerUrl: string): Promise<string[]> {
+	public listKeyIds(issuerUrl: string): string[] {
 		this.checkIssuer(issuerUrl);
 		if (!this.store[issuerUrl]) {
-			return Promise.resolve([]);
+			return [];
 		}
-		return Promise.resolve(Object.keys(this.store[issuerUrl].keys));
+		return Object.keys(this.store[issuerUrl].keys);
 	}
 
 	public issuerMatch(issuerUrl: string) {
@@ -29,13 +29,11 @@ export class JwtSymmetricTokenIssuer implements IJwtTokenSymmetricIssuer {
 
 	public add(issuerUrl: string, keyId: string, privateKey: string) {
 		this.checkIssuer(issuerUrl);
-		if (!this.store[issuerUrl]) {
-			this.store[issuerUrl] = {
-				_ts: 0,
-				type: this.type,
-				keys: {},
-			};
-		}
+		this.store[issuerUrl] ??= {
+			_ts: 0,
+			type: this.type,
+			keys: {},
+		};
 		this.store[issuerUrl].keys[keyId] = privateKey;
 		this.store[issuerUrl]._ts = Date.now();
 	}
@@ -58,6 +56,14 @@ export class JwtSymmetricTokenIssuer implements IJwtTokenSymmetricIssuer {
 			};
 			return last;
 		}, {});
+	}
+
+	public toString() {
+		const storeKeys = Object.values(this.store).reduce<number>((last, issuer) => {
+			last += Object.keys(issuer.keys).length;
+			return last;
+		}, 0);
+		return `JwtSymmetricTokenIssuer: ${storeKeys} keys`;
 	}
 
 	private checkIssuer(issuerUrl: string) {

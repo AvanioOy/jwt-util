@@ -1,20 +1,20 @@
 import {type CertAsymmetricIssuerFile, type CertSymmetricIssuer} from '../interfaces/IJwtCertStore';
-import {JwtAsymmetricDiscoveryTokenIssuer, type JwtAsymmetricDiscoveryTokenIssuerProps} from './JwtAsymmetricDiscoveryTokenIssuer';
 import {type IJwtTokenAsymmetricIssuer} from '../interfaces/IJwtTokenIssuer';
+import {type IJwtAsymmetricDiscoveryTokenIssuerProps, JwtAsymmetricDiscoveryTokenIssuer} from './JwtAsymmetricDiscoveryTokenIssuer';
 
-interface JwtAzureMultitenantTokenIssuerProps extends JwtAsymmetricDiscoveryTokenIssuerProps {
+interface IJwtAzureMultiTenantTokenIssuerProps extends IJwtAsymmetricDiscoveryTokenIssuerProps {
 	allowedIssuers?: string[];
 }
 
-export class JwtAzureMultitenantTokenIssuer implements IJwtTokenAsymmetricIssuer {
+export class JwtAzureMultiTenantTokenIssuer implements IJwtTokenAsymmetricIssuer {
 	public readonly type = 'asymmetric';
 	private azureIssuers = new Map<string, JwtAsymmetricDiscoveryTokenIssuer>();
 
-	private props: JwtAzureMultitenantTokenIssuerProps;
+	private props: IJwtAzureMultiTenantTokenIssuerProps;
 
-	constructor(props: JwtAzureMultitenantTokenIssuerProps = {}) {
+	constructor(props: IJwtAzureMultiTenantTokenIssuerProps = {}) {
 		this.props = props;
-		this.props.logger?.info(`JwtAzureMultitenantTokenIssuer created for ${String(this.props.allowedIssuers?.length)} issuers rules`);
+		this.props.logger?.info(`JwtAzureMultiTenantTokenIssuer created for ${String(this.props.allowedIssuers?.length)} issuers rules`);
 	}
 
 	public listKeyIds(issuerUrl: string): Promise<string[]> {
@@ -22,7 +22,6 @@ export class JwtAzureMultitenantTokenIssuer implements IJwtTokenAsymmetricIssuer
 	}
 
 	public issuerMatch(issuerUrl: string) {
-		// this.props.logger?.debug(`${this.type} issuerMatch ${issuerUrl} ${this.props.allowedIssuers}`);
 		if (this.props.allowedIssuers && this.props.allowedIssuers.length > 0 && !this.props.allowedIssuers.includes(issuerUrl)) {
 			return false;
 		}
@@ -56,6 +55,10 @@ export class JwtAzureMultitenantTokenIssuer implements IJwtTokenAsymmetricIssuer
 				...issuer.toJSON(),
 			};
 		}, {});
+	}
+
+	public toString() {
+		return `JwtAzureMultiTenantTokenIssuer`;
 	}
 
 	private getIssuer(issuerUrl: string): JwtAsymmetricDiscoveryTokenIssuer {

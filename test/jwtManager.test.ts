@@ -1,10 +1,9 @@
-/* eslint-disable sonarjs/no-duplicate-string */
 import * as dotenv from 'dotenv';
 import {describe, expect, it} from 'vitest';
+import {z} from 'zod';
+import {IssuerManager, JwtAsymmetricDiscoveryTokenIssuer, JwtAzureMultiTenantTokenIssuer, JwtManager} from '../src';
 import {getAzureAccessToken, haveAzureEnvVariables} from './lib/azure';
 import {getGoogleIdToken, haveGoogleEnvVariables} from './lib/google';
-import {IssuerManager, JwtAsymmetricDiscoveryTokenIssuer, JwtAzureMultitenantTokenIssuer, JwtManager} from '../src';
-import {z} from 'zod';
 
 dotenv.config();
 
@@ -28,7 +27,7 @@ describe('JwtManager', () => {
 	});
 	it('should validate azure token', {skip: !haveAzureEnvVariables()}, async () => {
 		const jwt = new JwtManager(
-			new IssuerManager([new JwtAzureMultitenantTokenIssuer({allowedIssuers: [`https://sts.windows.net/${String(process.env.AZ_TENANT_ID)}/`]})]),
+			new IssuerManager([new JwtAzureMultiTenantTokenIssuer({allowedIssuers: [`https://sts.windows.net/${String(process.env.AZ_TENANT_ID)}/`]})]),
 		);
 		const token = await getAzureAccessToken();
 		const {isCached, body} = await jwt.verify(token);

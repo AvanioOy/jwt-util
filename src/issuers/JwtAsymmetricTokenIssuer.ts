@@ -1,8 +1,15 @@
+import {type ILoggerLike} from '@avanio/logger-like';
 import {type CertAsymmetricIssuer, type CertAsymmetricIssuerFile, type CertSymmetricIssuer} from '../interfaces/IJwtCertStore';
 import {type IJwtTokenAsymmetricIssuer} from '../interfaces/IJwtTokenIssuer';
-import {type ILoggerLike} from '@avanio/logger-like';
 
-function buildStringOrRegExpMatch(issuerUrl: string) {
+/**
+ * Returns a function that takes a string or RegExp and returns true if the
+ * issuerUrl matches the rule.
+ * @param issuerUrl - The issuerUrl to match
+ * @returns A function that takes a string or RegExp and returns true if the
+ * issuerUrl matches the rule.
+ */
+function buildStringOrRegExpMatch(issuerUrl: string): (issuerUrlRule: string | RegExp) => boolean {
 	return function stringOrRegExpMatch(issuerUrlRule: string | RegExp): boolean {
 		if (typeof issuerUrlRule === 'string') {
 			return issuerUrlRule === issuerUrl;
@@ -12,7 +19,7 @@ function buildStringOrRegExpMatch(issuerUrl: string) {
 	};
 }
 
-export interface JwtAsymmetricTokenIssuerProps {
+export interface IJwtAsymmetricTokenIssuerProps {
 	logger?: ILoggerLike;
 }
 
@@ -23,7 +30,7 @@ export class JwtAsymmetricTokenIssuer implements IJwtTokenAsymmetricIssuer {
 	protected store: Record<string, CertAsymmetricIssuer> = {};
 	protected logger?: ILoggerLike;
 	protected issuerUrls: (string | RegExp)[] = [];
-	constructor(issuerUrlRules: (string | RegExp)[], {logger}: JwtAsymmetricTokenIssuerProps = {}) {
+	constructor(issuerUrlRules: (string | RegExp)[], {logger}: IJwtAsymmetricTokenIssuerProps = {}) {
 		this.issuerUrls = issuerUrlRules;
 		this.logger = logger;
 		this.logger?.info(`${this.name} created for ${issuerUrlRules.length.toString()} issuers rules`);
@@ -55,13 +62,11 @@ export class JwtAsymmetricTokenIssuer implements IJwtTokenAsymmetricIssuer {
 	public add(issuerUrl: string, keyId: string, cert: Buffer) {
 		this.logger?.debug(`${this.name} add ${issuerUrl} ${keyId}`);
 		this.checkIssuer(issuerUrl);
-		if (!this.store[issuerUrl]) {
-			this.store[issuerUrl] = {
-				_ts: 0,
-				type: this.type,
-				keys: {},
-			};
-		}
+		this.store[issuerUrl] ??= {
+			_ts: 0,
+			type: this.type,
+			keys: {},
+		};
 		this.store[issuerUrl].keys[keyId] = cert;
 		this.store[issuerUrl]._ts = Date.now();
 	}
@@ -101,6 +106,10 @@ export class JwtAsymmetricTokenIssuer implements IJwtTokenAsymmetricIssuer {
 			};
 			return last;
 		}, {});
+	}
+
+	public toString() {
+		return `JwtAsymmetricTokenIssuer`;
 	}
 
 	protected checkIssuer(issuerUrl: string) {

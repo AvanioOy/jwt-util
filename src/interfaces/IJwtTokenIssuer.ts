@@ -1,16 +1,16 @@
 import {type CertAsymmetricIssuerFile, type CertSymmetricIssuer} from './IJwtCertStore';
 
-export interface JwtIssuerSymmetricObject {
+export type JwtIssuerSymmetricObject = {
 	_ts: Date;
 	type: 'symmetric';
 	keys: Record<string, string>;
-}
+};
 
-export interface JwtIssuerAsymmetricObject {
+export type JwtIssuerAsymmetricObject = {
 	_ts: Date;
 	type: 'asymmetric';
 	keys: Record<string, Buffer>;
-}
+};
 
 export interface IJwtTokenSymmetricIssuer {
 	/**
@@ -28,11 +28,11 @@ export interface IJwtTokenSymmetricIssuer {
 	/**
 	 * Get the secret from the issuer
 	 */
-	get: (issuerUrl: string, keyId: string) => Promise<string | undefined>;
+	get: (issuerUrl: string, keyId: string) => string | undefined | Promise<string | undefined>;
 	/**
 	 * List all the key ids from the issuer
 	 */
-	listKeyIds: (issuerUrl: string) => Promise<string[]>;
+	listKeyIds: (issuerUrl: string) => string[] | Promise<string[]>;
 	/**
 	 * Import the issuer data from all the issuers
 	 */
@@ -41,6 +41,7 @@ export interface IJwtTokenSymmetricIssuer {
 	 * Export the issuer data
 	 */
 	toJSON(): Record<string, CertSymmetricIssuer>;
+	toString(): string;
 }
 
 export interface IJwtTokenAsymmetricIssuer {
@@ -59,11 +60,11 @@ export interface IJwtTokenAsymmetricIssuer {
 	/**
 	 * Get the public key from the issuer
 	 */
-	get: (issuerUrl: string, keyId: string) => Promise<Buffer | undefined>;
+	get: (issuerUrl: string, keyId: string) => Buffer | undefined | Promise<Buffer | undefined>;
 	/**
 	 * List all the key ids from the issuer
 	 */
-	listKeyIds: (issuerUrl: string) => Promise<string[]>;
+	listKeyIds: (issuerUrl: string) => string[] | Promise<string[]>;
 	/**
 	 * Import the issuer data from all the issuers
 	 */
@@ -72,6 +73,7 @@ export interface IJwtTokenAsymmetricIssuer {
 	 * Export the issuer data
 	 */
 	toJSON(): Record<string, CertAsymmetricIssuerFile>;
+	toString(): string;
 }
 
 export type IJwtTokenIssuer = IJwtTokenSymmetricIssuer | IJwtTokenAsymmetricIssuer;

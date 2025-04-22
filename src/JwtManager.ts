@@ -1,18 +1,28 @@
+import {EventEmitter} from 'events';
 import {AuthHeader, isAuthHeaderLikeString} from '@avanio/auth-header';
-import {decode, type Jwt, type JwtPayload, type VerifyOptions} from 'jsonwebtoken';
 import {ExpireCache} from '@avanio/expire-cache';
-import {type IAsyncCache} from '@luolapeikko/cache-types';
-import {type IIssuerManager} from './interfaces/IIssuerManager';
 import {type ILoggerLike} from '@avanio/logger-like';
+import {type IAsyncCache, type IAsyncCacheWithEvents} from '@luolapeikko/cache-types';
+import {decode, type Jwt, type JwtPayload, type VerifyOptions} from 'jsonwebtoken';
+import {type IIssuerManager} from './interfaces/IIssuerManager';
+import {type JwtResponse} from './interfaces/JwtResponse';
+import {jwtVerifyPromise} from './lib/jwt';
 import {JwtBodyError} from './lib/JwtBodyError';
 import {JwtError} from './lib/JwtError';
 import {JwtHeaderError} from './lib/JwtHeaderError';
-import {type JwtResponse} from './interfaces/JwtResponse';
-import {jwtVerifyPromise} from './lib/jwt';
+
+export type JwtManagerEventMapping = {
+	add: [JwtPayload];
+	expire: [JwtPayload];
+};
 
 type JwtManagerOptions = {
 	logger?: ILoggerLike;
 };
+
+function isEventCache(cache: IAsyncCache<JwtPayload> | IAsyncCacheWithEvents<JwtPayload>): cache is IAsyncCacheWithEvents<JwtPayload> {
+	return cache instanceof EventEmitter;
+}
 
 /**
  * Jwt manager verifies and caches validated jwt tokens
@@ -20,15 +30,21 @@ type JwtManagerOptions = {
  * const jwt = new JwtManager(new IssuerManager([new JwtAsymmetricDiscoveryTokenIssuer(['https://accounts.google.com'])]))
  * const {isCached, body} = await jwt.verify(token);
  */
-export class JwtManager {
+export class JwtManager extends EventEmitter<JwtManagerEventMapping> {
 	private issuerManager: IIssuerManager;
 	private options: JwtManagerOptions;
-	private cache: IAsyncCache<JwtPayload>;
+	public readonly cache: IAsyncCache<JwtPayload> | IAsyncCacheWithEvents<JwtPayload>;
 
-	constructor(issuerManager: IIssuerManager, cache?: IAsyncCache<JwtPayload>, options: JwtManagerOptions = {}) {
+	public constructor(issuerManager: IIssuerManager, cache?: IAsyncCache<JwtPayload> | IAsyncCacheWithEvents<JwtPayload>, options: JwtManagerOptions = {}) {
+		super();
 		this.issuerManager = issuerManager;
-		this.cache = cache || new ExpireCache<JwtPayload>();
+		this.cache = cache ?? new ExpireCache<JwtPayload>();
 		this.options = options;
+		// hook cache events to emit events
+		if (isEventCache(this.cache)) {
+			this.cache.on('set', (_key, payload) => this.emit('add', payload));
+			this.cache.on('expires', (_key, payload) => this.emit('expire', payload));
+		}
 	}
 
 	/**

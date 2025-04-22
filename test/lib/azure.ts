@@ -1,10 +1,18 @@
 import {ConfidentialClientApplication} from '@azure/msal-node';
 
+/**
+ * Check if AZ_CLIENT_ID, AZ_CLIENT_SECRET and AZ_TENANT_ID env vars are set
+ * @returns true if env vars are set
+ */
 export function haveAzureEnvVariables() {
 	const {AZ_CLIENT_ID, AZ_CLIENT_SECRET, AZ_TENANT_ID} = process.env;
 	return Boolean(AZ_CLIENT_ID && AZ_CLIENT_SECRET && AZ_TENANT_ID);
 }
 
+/**
+ * Get Azure access token
+ * @returns Azure access token
+ */
 export async function getAzureAccessToken() {
 	const {AZ_CLIENT_ID, AZ_CLIENT_SECRET, AZ_TENANT_ID} = process.env;
 	if (!AZ_CLIENT_ID || !AZ_CLIENT_SECRET || !AZ_TENANT_ID) {
@@ -21,7 +29,7 @@ export async function getAzureAccessToken() {
 			authority: `https://login.microsoftonline.com/${AZ_TENANT_ID}`,
 		},
 	});
-	const scope = process.env.AZ_SCOPE || `api://${AZ_CLIENT_ID}/.default`;
+	const scope = process.env.AZ_SCOPE ?? `api://${AZ_CLIENT_ID}/.default`;
 	const authResult = await client.acquireTokenByClientCredential({
 		scopes: [scope],
 	});

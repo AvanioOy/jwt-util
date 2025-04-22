@@ -1,11 +1,19 @@
-import {azureMultilineEnvFix} from './common';
 import {google} from 'googleapis';
+import {azureMultilineEnvFix} from './common';
 
+/**
+ * Check if GOOGLE_CLIENT_EMAIL and GOOGLE_CLIENT_KEY env vars are set
+ * @returns true if env vars are set
+ */
 export function haveGoogleEnvVariables() {
 	const {GOOGLE_CLIENT_EMAIL, GOOGLE_CLIENT_KEY} = process.env;
 	return Boolean(GOOGLE_CLIENT_EMAIL && GOOGLE_CLIENT_KEY);
 }
 
+/**
+ * Get google access token
+ * @returns google access token
+ */
 function getAccessToken(): Promise<string> {
 	const clientKey = azureMultilineEnvFix(process.env.GOOGLE_CLIENT_KEY);
 	return new Promise((resolve, reject) => {
@@ -21,7 +29,7 @@ function getAccessToken(): Promise<string> {
 				reject(err);
 				return;
 			}
-			if (!cred || !cred.access_token) {
+			if (!cred?.access_token) {
 				reject(new Error('no access token'));
 			} else {
 				resolve(cred.access_token);
@@ -30,6 +38,10 @@ function getAccessToken(): Promise<string> {
 	});
 }
 
+/**
+ * Get google id token
+ * @returns google id token
+ */
 export async function getGoogleIdToken() {
 	const body = JSON.stringify({
 		audience: process.env.GOOGLE_CLIENT_EMAIL,
