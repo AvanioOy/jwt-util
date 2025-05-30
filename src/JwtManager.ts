@@ -1,7 +1,7 @@
 import {EventEmitter} from 'events';
-import {AuthHeader, isAuthHeaderLikeString} from '@avanio/auth-header';
 import {ExpireCache} from '@avanio/expire-cache';
 import {type ILoggerLike} from '@avanio/logger-like';
+import {AuthHeader, isAuthHeaderString} from '@luolapeikko/auth-header';
 import {type IAsyncCache, type IAsyncCacheWithEvents} from '@luolapeikko/cache-types';
 import {decode, type Jwt, type JwtPayload, type VerifyOptions} from 'jsonwebtoken';
 import {type IIssuerManager} from './interfaces/IIssuerManager';
@@ -62,12 +62,12 @@ export class JwtManager extends EventEmitter<JwtManagerEventMapping> {
 		jwtBodyValidation?: (jwtBody: unknown) => T,
 	): Promise<JwtResponse<T>> {
 		try {
-			const currentToken = isAuthHeaderLikeString(tokenOrBearer) ? AuthHeader.fromString(tokenOrBearer) : tokenOrBearer;
+			const currentToken = isAuthHeaderString(tokenOrBearer) ? AuthHeader(tokenOrBearer).unwrap() : tokenOrBearer;
 			// only allow bearer as auth type
-			if (currentToken instanceof AuthHeader && currentToken.type !== 'BEARER') {
+			if (typeof currentToken !== 'string' && currentToken.scheme !== 'BEARER') {
 				throw new JwtHeaderError('token header: wrong authentication header type');
 			}
-			const token = currentToken instanceof AuthHeader ? currentToken.credentials : currentToken;
+			const token = typeof currentToken === 'string' ? currentToken : currentToken.getCredentials();
 			const cached = (await this.cache.get(token)) as (T & JwtPayload) | undefined;
 			if (cached) {
 				return {body: cached, isCached: true};

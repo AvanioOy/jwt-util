@@ -31,7 +31,7 @@ describe('JwtManager', () => {
 		);
 		const token = await getAzureAccessToken();
 		const {isCached, body} = await jwt.verify(token);
-		expect(body).to.have.all.keys(['aud', 'iss', 'iat', 'nbf', 'exp', 'aio', 'appid', 'appidacr', 'idp', 'oid', 'rh', 'sub', 'tid', 'uti', 'ver']);
+		expect(body).to.have.all.keys(['aud', 'iss', 'iat', 'nbf', 'exp', 'aio', 'appid', 'appidacr', 'idp', 'oid', 'rh', 'sub', 'tid', 'uti', 'ver', 'xms_ftd']);
 		expect(isCached).to.be.eq(false);
 	});
 });
